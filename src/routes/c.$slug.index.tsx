@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { QtyInput } from "@/components/ui/qty-input";
 import { StorefrontChatLink } from "@/components/customer/storefront-chat-link";
-import { ShoppingBag, ShoppingCart, X, Send, Info, Truck, PhoneCall, ScrollText, MessageSquare, UserCircle2, Flame, Tag, ShieldCheck, Phone, ChevronLeft } from "lucide-react";
+import { ShoppingBag, ShoppingCart, X, Send, Info, Truck, PhoneCall, ScrollText, MessageSquare, UserCircle2, Flame, Tag, ShieldCheck, Phone, ChevronLeft, Search } from "lucide-react";
 import { bestOfferPlan, type OfferPlan } from "@/lib/product-offer-badge";
 import {
   validateAddress,
@@ -108,6 +108,7 @@ function BrandPageInner({ slug }: { slug: string }) {
   const [openDetail, setOpenDetail] = useState<{ kind: "policy" | "contact" | "shipping"; id: string } | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const cart = useCart();
   const session = useCustomerSession({ merchantId: q.data?.merchantId ?? null });
 
@@ -149,43 +150,40 @@ function BrandPageInner({ slug }: { slug: string }) {
 
   const theme = THEMES[(store.themeKey ?? "").toLowerCase()] ?? THEMES.espresso;
   const categories = Array.from(new Set(store.products.map((p) => p.category).filter((c): c is string => !!c)));
-  const shown = category ? store.products.filter((p) => p.category === category) : store.products;
+  const shown = store.products.filter((p) => (!category || p.category === category) &&
+    (!search.trim() || `${p.name} ${p.category ?? ""}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())));
   const onSale = store.products.some((p) => (p.offers ?? []).length > 0);
 
   return (
     <div dir={storeDir()} className="store merchant-browse min-h-screen">
       {/* Announcement bar (offers only) */}
       {onSale && (
-        <div className="overflow-hidden bg-primary py-2 text-primary-foreground">
-          <div className="store-marquee flex w-max gap-12 whitespace-nowrap">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <span key={i} className="store-label">
-                {t("عروض لفترة محدودة")}
-              </span>
-            ))}
-          </div>
+        <div className="bg-primary px-4 py-2.5 text-center text-xs text-primary-foreground">
+          {t("عروض لفترة محدودة")}
         </div>
       )}
 
       <StorefrontChatLink slug={slug} merchantId={store.merchantId} />
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-7">
-          <Link to="/c/$slug" params={{ slug }} className="flex min-w-0 max-w-full items-center gap-2">
-            {store.logoUrl && <img src={store.logoUrl} alt="" className="h-8 w-8 object-cover" />}
-            <span className="merchant-brand break-words text-2xl font-extrabold sm:text-3xl">{brandName}</span>
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-5">
+          <Link to="/c/$slug" params={{ slug }} className="flex min-w-0 flex-1 items-center gap-3">
+            {store.logoUrl && <img src={store.logoUrl} alt="" className="h-10 w-10 shrink-0 object-contain" />}
+            <span className="merchant-brand break-words text-xl font-extrabold leading-relaxed sm:text-3xl">{brandName}</span>
           </Link>
           <div className="flex items-center justify-end gap-1">
             <StoreLangToggle />
             <Link
               to="/c/$slug/track" params={{ slug }}
-              className="store-label inline-flex h-10 items-center border-b border-foreground/30 pb-0.5 transition hover:border-foreground"
+              title={t("تتبع طلبي")}
+              aria-label={t("تتبع طلبي")}
+              className="inline-flex h-11 min-w-11 items-center justify-center gap-2 text-xs transition hover:bg-muted sm:px-3"
             >
-              {t("تتبع طلبي")}
+              <Truck className="h-5 w-5" strokeWidth={1.5} /><span className="hidden sm:inline">{t("تتبع طلبي")}</span>
             </Link>
             <Button variant="ghost" size="icon"
               onClick={() => { void q.refetch(); setCartOpen(true); }}
               aria-label={t("السلة")}
-              className="relative me-1 grid h-12 w-12 place-items-center rounded-full border border-border hover:bg-muted"
+              className="relative grid h-11 w-11 shrink-0 place-items-center hover:bg-muted"
             >
               <ShoppingBag className="h-6 w-6" strokeWidth={1.5} />
               {cart.count > 0 && (
@@ -198,31 +196,36 @@ function BrandPageInner({ slug }: { slug: string }) {
         </div>
       </header>
 
-      <main id="shop" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 pb-12 pt-7 sm:px-7 sm:pt-9">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+      <main id="shop" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4 pb-16 pt-8 sm:px-8 sm:pt-12">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-5 sm:mb-9">
           <div>
-            <h1 className="merchant-brand text-xl font-bold sm:text-2xl">{category ?? t("كل المنتجات")}</h1>
+            <h1 className="merchant-brand text-2xl font-bold sm:text-4xl">{category ?? t("كل المنتجات")}</h1>
             {store.brandDescription && <p className="mt-2 max-w-xl whitespace-pre-line text-sm leading-relaxed text-muted-foreground">{store.brandDescription}</p>}
           </div>
-          <span className="text-xs text-muted-foreground">{shown.length} {t("قطعة")}</span>
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute start-3 top-3.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" aria-label={t("ابحث عن منتج")} placeholder={t("ابحث عن منتج")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-11 rounded-none border-border bg-background ps-10 text-sm" />
+          </div>
         </div>
-        {categories.length > 0 && (
-          <div className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+        <div className="mb-6 flex min-w-0 items-center justify-between gap-3 border-b border-border sm:mb-8">
+          <nav aria-label={t("الأقسام")} className="merchant-category-track flex min-w-0 gap-5 overflow-x-auto sm:gap-7">
             {[null, ...categories].map((c) => (
-               <Button variant="outline"
+               <Button variant="ghost"
                 key={c ?? "all"}
                 onClick={() => setCategory(c)}
-                className={`store-label shrink-0 border px-4 py-2 transition ${category === c ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"}`}
+                aria-pressed={category === c}
+                className={`h-12 shrink-0 rounded-none border-b-2 px-0 text-sm hover:bg-transparent ${category === c ? "border-primary font-bold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
                 {c ?? t("الكل")}
                </Button>
             ))}
-          </div>
-        )}
+          </nav>
+          <span className="shrink-0 text-xs text-muted-foreground" aria-live="polite">{shown.length} {t("قطعة")}</span>
+        </div>
         {shown.length === 0 ? (
           <div className="border border-dashed border-border py-24 text-center">
-            <p className="store-display text-4xl">{t("قريباً")}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{t("لا توجد منتجات منشورة بعد.")}</p>
+            <p className="text-xl font-semibold">{t(search ? "لا توجد نتائج" : "قريباً")}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t(search ? "جرّب البحث باسم آخر" : "لا توجد منتجات منشورة بعد.")}</p>
           </div>
         ) : (
           <div className="merchant-product-track">
@@ -461,10 +464,10 @@ function ProductCard({ product }: { product: StorefrontData["products"][number] 
   const sale = Boolean(plan?.qualifies && plan.discountNow > 0);
   return (
     <article className="merchant-product group flex min-w-0 flex-col">
-      <div className="merchant-product-image relative w-full cursor-pointer overflow-hidden bg-secondary" onClick={() => setOpen(true)}>
+      <Button variant="ghost" aria-label={`${t("تفاصيل المنتج")} — ${product.name}`} className="merchant-product-image relative h-auto w-full overflow-hidden rounded-none bg-secondary p-0 hover:bg-secondary" onClick={() => setOpen(true)}>
         {img ? (
           <>
-            <img src={shownImg} alt={product.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain" />
+            <img src={shownImg} alt={product.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 motion-safe:group-hover:scale-[1.035]" />
           </>
         ) : (
           <div className="grid h-full place-items-center">
@@ -484,10 +487,9 @@ function ProductCard({ product }: { product: StorefrontData["products"][number] 
             <span className="store-label bg-background px-3 py-1.5">{t("نفدت الكمية")}</span>
           </div>
         )}
-      </div>
+      </Button>
 
-      <PhotoThumbnails groups={photoGroups} color={color} active={shownImg} onPick={setActiveImg} />
-      <div className="flex min-w-0 flex-1 flex-col gap-2 pt-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 pt-3 sm:pt-4">
         {product.category && <span className="store-label truncate text-[10px] text-muted-foreground">{product.category}</span>}
         <Button variant="link" type="button" onClick={() => setOpen(true)} className="h-auto min-h-6 justify-start whitespace-normal p-0 text-start text-sm font-semibold leading-6 sm:text-base">{product.name}</Button>
         {unitPrice != null && (
@@ -506,53 +508,24 @@ function ProductCard({ product }: { product: StorefrontData["products"][number] 
             ))}
           </div>
         )}
-        {displayedDescription && <p className="line-clamp-3 text-xs leading-6 text-muted-foreground">{displayedDescription}</p>}
-        {sizesForColor.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t("المقاس")}>
-            <span className="me-1 text-[11px] text-muted-foreground">{t("المقاس")}</span>
-            {sizesForColor.map((s) => (
-              <Button variant="outline" size="sm"
-                key={s}
-                type="button"
-                onClick={() => { setSize(s); setQty(1); }}
-                aria-pressed={effectiveSize === s}
-                className={`h-8 min-w-8 rounded-none px-2 text-[11px] font-semibold transition ${effectiveSize === s ? "border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "border-border hover:border-primary"}`}
-              >
-                {s}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        {plan && (
-          <ProductOfferBox plan={plan} currency={cur} quantity={clampedQty} onPickQty={(n) => setQty(n)} />
-        )}
-        {selectedStock != null && showLow && (
-          <div className="flex items-center gap-1 text-[11px] font-semibold text-destructive">
-            <Flame className="h-3 w-3" /> {t("متبقي")} {selectedStock} {selectedStock === 1 ? t("قطعة") : t("قطع")} {t("فقط")}
-          </div>
-        )}
-
-        {!outOfStock && (
-          <div className="mt-auto pt-1">
+          <div className="mt-auto pt-2">
             <Button
               type="button"
-              disabled={alreadyInCart}
-              onClick={addToCart}
-              className="h-10 w-full gap-2 rounded-none text-xs transition disabled:bg-muted disabled:text-muted-foreground"
+              variant="outline"
+              onClick={() => setOpen(true)}
+              className="h-11 w-full gap-2 rounded-none border-border text-xs transition hover:border-primary"
             >
-              {alreadyInCart ? t("في السلة ✓") : t("شراء الآن")}
+              {alreadyInCart ? t("في السلة ✓") : t("تفاصيل المنتج")}
                <ShoppingBag className="h-3.5 w-3.5" />
             </Button>
           </div>
-        )}
       </div>
       {open && (
         <div className="store fixed inset-0 z-50 flex bg-foreground/40 backdrop-blur-sm" dir={storeDir()} onClick={() => setOpen(false)}>
           <div role="dialog" aria-modal="true" aria-label={product.name} className="merchant-browse mr-auto flex h-full w-full max-w-lg flex-col overflow-y-auto bg-background shadow-2xl animate-in slide-in-from-left duration-300" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b px-5 py-4">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-5 py-3">
               <span className="store-label">{t("تفاصيل المنتج")}</span>
-              <button onClick={() => setOpen(false)} aria-label={t("إغلاق")} className="rounded p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label={t("إغلاق")} className="h-11 w-11"><X className="h-5 w-5" /></Button>
             </div>
             <div className="relative mx-auto aspect-square max-h-[55vh] w-full bg-secondary">
               {shownImg ? <img src={shownImg} alt={product.name} className="absolute inset-0 h-full w-full object-contain" /> : (
@@ -587,8 +560,8 @@ function ProductCard({ product }: { product: StorefrontData["products"][number] 
                   <p className="store-label mb-2">{t("المقاس")}</p>
                   <div className="flex flex-wrap gap-2">
                     {sizesForColor.map((s) => (
-                      <button key={s} type="button" onClick={() => { setSize(s); setQty(1); }}
-                        className={`grid h-10 min-w-10 place-items-center border px-2 text-xs font-semibold transition ${effectiveSize === s ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"}`}>{s}</button>
+                      <Button variant="outline" key={s} type="button" aria-pressed={effectiveSize === s} onClick={() => { setSize(s); setQty(1); }}
+                        className={`h-11 min-w-11 rounded-none px-3 text-xs font-semibold transition ${effectiveSize === s ? "border-primary bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : "border-border hover:border-primary"}`}>{s}</Button>
                     ))}
                   </div>
                 </div>
@@ -597,16 +570,16 @@ function ProductCard({ product }: { product: StorefrontData["products"][number] 
               {outOfStock ? (
                 <span className="store-label bg-muted px-3 py-3 text-center">{t("نفدت الكمية")}</span>
               ) : (
-                <div className="flex items-stretch gap-2">
+                <div className="merchant-purchase-bar sticky bottom-0 z-10 -mx-5 -mb-8 flex items-stretch gap-3 border-t border-border bg-background px-5 pb-5 pt-4">
                   <div className="flex h-12 items-center border border-border">
-                    <button type="button" aria-label={t("زيادة")} className="h-full w-10 hover:bg-muted" onClick={() => setQty(Math.min(clampedQty + 1, maxQty))}>+</button>
+                    <Button variant="ghost" type="button" aria-label={t("زيادة")} className="h-full w-11 rounded-none p-0" onClick={() => setQty(Math.min(clampedQty + 1, maxQty))}>+</Button>
                     <span className="w-8 text-center">{clampedQty}</span>
-                    <button type="button" aria-label={t("نقص")} className="h-full w-10 hover:bg-muted" onClick={() => setQty(Math.max(clampedQty - 1, 1))}>−</button>
+                    <Button variant="ghost" type="button" aria-label={t("نقص")} className="h-full w-11 rounded-none p-0" onClick={() => setQty(Math.max(clampedQty - 1, 1))}>−</Button>
                   </div>
-                  <button type="button" disabled={alreadyInCart} onClick={addToCart}
-                    className="store-label h-12 flex-1 bg-primary text-primary-foreground transition hover:bg-primary/85 disabled:bg-muted disabled:text-muted-foreground">
+                  <Button type="button" disabled={alreadyInCart} onClick={addToCart}
+                    className="h-12 min-w-0 flex-1 rounded-none text-xs disabled:bg-muted disabled:text-muted-foreground">
                     {alreadyInCart ? t("في السلة ✓") : t("شراء الآن")}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

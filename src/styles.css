@@ -698,13 +698,13 @@
 }
 .store .store-display {
   font-family: "Bebas Neue", "Cairo", sans-serif;
-  letter-spacing: 0.02em;
-  line-height: 0.95;
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 .store .store-label {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 @utility store-marquee {
@@ -803,13 +803,23 @@
 .showcase-product-image img { transition: transform 700ms ease; }
 .showcase-product:hover img { transform: scale(1.035); }
 .merchant-browse .merchant-brand, .merchant-browse .merchant-product { font-family: "Cairo", sans-serif; letter-spacing: 0; }
-.merchant-product-track { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; }
-.merchant-product-image { aspect-ratio: 1.25; }
+.merchant-browse { --secondary: oklch(0.965 0 0); --muted: oklch(0.965 0 0); }
+.merchant-product-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: stretch; gap: 40px 24px; }
+.merchant-product-image { aspect-ratio: 3 / 4; white-space: normal; text-align: start; }
 .merchant-product-track > article { min-width: 0; }
+.merchant-category-track { scrollbar-width: none; }
+.merchant-category-track::-webkit-scrollbar { display: none; }
+.merchant-browse .store-chat-fab { bottom: max(20px, env(safe-area-inset-bottom)); width: 48px; height: 48px; }
+.merchant-browse .store-chat-fab-ring { display: none; }
+.merchant-purchase-bar { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+@media (min-width: 640px) and (max-width: 1023px) {
+  .merchant-product-track { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 18px; }
+}
 @media (max-width: 639px) {
-  .merchant-product-track { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 82%; gap: 14px; margin-inline: -16px; padding: 0 16px 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: thin; }
-  .merchant-product { scroll-snap-align: center; }
-  .merchant-product-image { aspect-ratio: 1.3; }
+  .merchant-product-track { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 12px; }
+  .merchant-product-image { aspect-ratio: 3 / 4; }
+  .merchant-product-image .store-label { font-size: 10px; line-height: 1.5; }
+  .merchant-browse .store-chat-fab { left: 12px; }
 }
 .showcase-cursor { position: absolute; top: 0; left: 0; z-index: 5; opacity: 0; pointer-events: none; transition: transform 650ms cubic-bezier(.25,.8,.25,1), opacity 180ms ease; }
 .showcase-cursor.is-visible { opacity: 1; }

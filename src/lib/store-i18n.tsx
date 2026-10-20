@@ -39,6 +39,10 @@ export function useStoreLang(): StoreLang {
 export const storeDir = () => (getStoreLang() === "en" ? "ltr" : "rtl");
 
 export const EN: Record<string, string> = {
+  "ابحث عن منتج": "Search products",
+  "الأقسام": "Categories",
+  "لا توجد نتائج": "No results",
+  "جرّب البحث باسم آخر": "Try another product name",
   "إخفاء تفاصيل الأوردر": "Hide order details",
   "إغلاق": "Close",
   "إنشاء الأوردر": "Place order",
