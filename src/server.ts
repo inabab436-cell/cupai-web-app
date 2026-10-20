@@ -44,9 +44,27 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Map the project's custom secret names onto the names the code reads.
+function applySecretAliases(env: unknown) {
+  if (typeof process === "undefined") return;
+  const source = (env && typeof env === "object" ? env : {}) as Record<string, unknown>;
+  const read = (k: string) =>
+    (typeof source[k] === "string" ? (source[k] as string) : undefined) ?? process.env[k];
+  const aliases: Record<string, string> = {
+    SUPABASE_URL: "CUPAI_APP_SB_URL",
+    SUPABASE_PUBLISHABLE_KEY: "CUPAI_APP_SB_ANON",
+    SUPABASE_SERVICE_ROLE_KEY: "CUPAI_APP_SB_SERVICE",
+  };
+  for (const [target, alias] of Object.entries(aliases)) {
+    const value = read(alias);
+    if (value) process.env[target] = value;
+  }
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      applySecretAliases(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
