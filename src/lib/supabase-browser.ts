@@ -5,12 +5,19 @@
  * `cupai_cs` cookie system; this client only performs the Google OAuth
  * handshake and hands the resulting access token to a server function.
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { lovable } from "@/integrations/lovable";
+import { getChatConfig } from "@/lib/chat-config.functions";
+
+let browserClient: Promise<SupabaseClient> | undefined;
 
 export async function getBrowserSupabase(): Promise<SupabaseClient> {
-  return supabase;
+  if (!browserClient) {
+    browserClient = getChatConfig().then((cfg) =>
+      createClient(cfg.supabaseUrl, cfg.supabaseAnonKey),
+    );
+  }
+  return browserClient;
 }
 
 export type GoogleIntent = { kind: "merchant" };
