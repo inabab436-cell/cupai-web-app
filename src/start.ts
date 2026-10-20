@@ -25,7 +25,24 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
+// The app's own sessions live in encrypted cookies. When the browser has no
+// Supabase config (keys are server-only secrets), skip the bearer attach
+// instead of failing every server call.
+const safeAttachSupabaseAuth = createMiddleware({ type: "function" }).client(
+  async ({ next }) => {
+    let token: string | undefined;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase.auth.getSession();
+      token = data.session?.access_token;
+    } catch {
+      token = undefined;
+    }
+    return next({ headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  },
+);
+
 export const startInstance = createStart(() => ({
-  functionMiddleware: [attachSupabaseAuth],
+  functionMiddleware: [safeAttachSupabaseAuth],
   requestMiddleware: [errorMiddleware, csrfMiddleware],
 }));
