@@ -1,5 +1,9 @@
 # Project copy
 
+## Storefront presentation
+- [ ] Refine the customer-facing merchant store with an orderly fashion retail design.
+- [ ] Verify product browsing and existing purchase controls on desktop and mobile.
+
 - [x] Copy complete application source and assets, retaining the supported runtime.
 - [x] Verify public preview and selected source behavior tests; data-backed verification remains blocked below.
 - [x] Fix all build/type errors (75 files) — typecheck passes clean.
